@@ -69,19 +69,22 @@ services:
 
   telemetrygen-traces:
     image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
-    command: ["traces", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    command: ["traces", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=24h"]
+    restart: unless-stopped
     depends_on:
       - otel-collector
 
   telemetrygen-metrics:
     image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
-    command: ["metrics", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    command: ["metrics", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=24h"]
+    restart: unless-stopped
     depends_on:
       - otel-collector
 
   telemetrygen-logs:
     image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
-    command: ["logs", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    command: ["logs", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=24h"]
+    restart: unless-stopped
     depends_on:
       - otel-collector
 
