@@ -132,3 +132,7 @@ If generators are down or you need an explicit test, run:
 ```bash
 docker compose run --rm telemetrygen-traces traces --otlp-endpoint=otel-collector:4317 --otlp-insecure --rate=5 --duration=15s
 ```
+
+## Additional scenario demo
+
+- `examples/llm-gateway-tool/`: separate compose stack with a modern `gateway-api -> llm-service -> tool-service` outage simulation to practice traces/logs/metrics correlation.
