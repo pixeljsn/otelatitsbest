@@ -29,15 +29,6 @@ services:
       - "4319:4317"   # Optional: host OTLP->Jaeger directly
     restart: unless-stopped
 
-  loki:
-    image: grafana/loki:3.4.2
-    command: ["-config.file=/etc/loki/local-config.yaml"]
-    volumes:
-      - loki-data:/loki
-    ports:
-      - "3100:3100"
-    restart: unless-stopped
-
   prometheus:
     image: prom/prometheus:v3.2.1
     command:
@@ -50,6 +41,13 @@ services:
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.4.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
     restart: unless-stopped
 
   grafana:
@@ -70,48 +68,23 @@ services:
     restart: unless-stopped
 
   telemetrygen-traces:
-    image: otel/telemetrygen:0.119.0
-    command:
-      - "traces"
-      - "--otlp-endpoint=otel-collector:4317"
-      - "--otlp-insecure"
-      - "--service=telemetrygen"
-      - "--rate=5"
-      - "--duration=0"
-      - "--workers=2"
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["traces", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
     depends_on:
       - otel-collector
-    restart: unless-stopped
 
   telemetrygen-metrics:
-    image: otel/telemetrygen:0.119.0
-    command:
-      - "metrics"
-      - "--otlp-endpoint=otel-collector:4317"
-      - "--otlp-insecure"
-      - "--service=telemetrygen"
-      - "--rate=5"
-      - "--duration=0"
-      - "--workers=2"
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["metrics", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
     depends_on:
       - otel-collector
-    restart: unless-stopped
 
   telemetrygen-logs:
-    image: otel/telemetrygen:0.119.0
-    command:
-      - "logs"
-      - "--otlp-endpoint=otel-collector:4317"
-      - "--otlp-insecure"
-      - "--service=telemetrygen"
-      - "--rate=5"
-      - "--duration=0"
-      - "--workers=2"
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["logs", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
     depends_on:
       - otel-collector
-    restart: unless-stopped
 
 volumes:
   prometheus-data:
   grafana-data:
-  loki-data:

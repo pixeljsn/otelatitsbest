@@ -7,9 +7,9 @@ This repo gives you a **stronger observability baseline** than a minimal compose
 - RED metrics derived from traces via the `spanmetrics` connector,
 - Prometheus for long-lived metrics storage/scraping,
 - Jaeger for tracing UX,
-- Loki for log storage/querying,
+- Loki for centralized log querying,
 - Grafana pre-provisioned with Prometheus + Jaeger + Loki datasources,
-- always-on `telemetrygen` services so you can immediately see traces/metrics/logs flowing.
+- built-in telemetry generators for traces, metrics, and logs.
 
 ## Why this is better than a basic demo stack
 
@@ -18,8 +18,9 @@ Many quick tutorials wire components together but skip operational essentials. T
 1. **Collector safety defaults**: memory limiting + batching.
 2. **Multi-signal ingest**: traces, metrics, and logs all accepted via OTLP.
 3. **Trace-to-metrics pipeline**: span-to-RED metrics using `spanmetrics`.
-4. **Ready dashboards and log exploration**: Grafana auto-connects to Prometheus, Jaeger, and Loki.
-5. **Immediate signal flow**: telemetry generators continuously emit all three signal types.
+4. **First-class logs**: collector logs pipeline exported directly into Loki.
+5. **Ready dashboards**: Grafana auto-connects to Prometheus, Jaeger, and Loki.
+6. **Smoke-test generators**: one-command demo telemetry to verify ingestion quickly.
 
 ## Quick start
 
@@ -27,21 +28,23 @@ Many quick tutorials wire components together but skip operational essentials. T
 docker compose up -d
 ```
 
-If your environment blocks GitHub Container Registry (`ghcr.io`), this stack already uses the Docker Hub
-`otel/telemetrygen` image for synthetic traces/metrics/logs to avoid registry auth errors.
-
 Open UIs:
 
 - Grafana: http://localhost:3000 (admin/admin)
 - Prometheus: http://localhost:9090
 - Jaeger: http://localhost:16686
-- Loki API health: http://localhost:3100/ready
+- Loki API: http://localhost:3100
 
-## Verify telemetry is flowing
+### Run smoke telemetry generation
 
-- **Traces**: open Jaeger and search for service `telemetrygen`.
-- **Metrics**: in Prometheus run `traces_spanmetrics_calls_total` or `target_info`.
-- **Logs**: in Grafana Explore, pick the `Loki` datasource and run query `{service_name="telemetrygen"}`.
+> The compose file uses the correct published image path for telemetrygen:
+> `ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0`
+
+```bash
+docker compose run --rm telemetrygen-traces
+docker compose run --rm telemetrygen-metrics
+docker compose run --rm telemetrygen-logs
+```
 
 ## Send telemetry from an app
 
@@ -65,7 +68,7 @@ OTEL_RESOURCE_ATTRIBUTES=deployment.environment=local,service.version=1.0.0
 
 ## Key files
 
-- `docker-compose.yml` - services, ports, and persistence
+- `docker-compose.yml` - services, ports, persistence, and telemetry generators
 - `otelcol/config.yaml` - receivers/processors/connectors/exporters
 - `prometheus/prometheus.yml` - scrape targets
 - `grafana/provisioning/datasources/datasources.yml` - auto datasource wiring
