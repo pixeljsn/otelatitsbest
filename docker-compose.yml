@@ -1,0 +1,90 @@
+version: "3.9"
+
+name: otel-observability-stack
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.119.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otelcol/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter (from collector pipeline)
+      - "13133:13133" # Collector health check
+      - "55679:55679" # zPages
+    depends_on:
+      - jaeger
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.65.0
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4319:4317"   # Optional: host OTLP->Jaeger directly
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.4.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:11.5.1
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - jaeger
+      - loki
+    restart: unless-stopped
+
+  telemetrygen-traces:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["traces", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    depends_on:
+      - otel-collector
+
+  telemetrygen-metrics:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["metrics", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    depends_on:
+      - otel-collector
+
+  telemetrygen-logs:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.119.0
+    command: ["logs", "--otlp-endpoint=otel-collector:4317", "--otlp-insecure", "--rate=3", "--duration=30s"]
+    depends_on:
+      - otel-collector
+
+volumes:
+  prometheus-data:
+  grafana-data:
