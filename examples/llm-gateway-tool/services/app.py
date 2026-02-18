@@ -102,6 +102,28 @@ async def ask(question: str) -> Dict[str, object]:
         return {"answer": answer, "served_by": SERVICE_NAME}
 
 
+@app.post("/admin/tool-fail-mode/{mode}")
+async def set_tool_fail_mode_from_gateway(mode: str) -> Dict[str, str]:
+    if SERVICE_NAME != "gateway-api":
+        raise HTTPException(status_code=404, detail="Route only available on gateway-api")
+
+    if mode not in {"none", "timeout", "error"}:
+        raise HTTPException(status_code=400, detail="mode must be one of: none, timeout, error")
+
+    with tracer.start_as_current_span("gateway.set_tool_fail_mode"):
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            try:
+                resp = await client.post(f"http://tool-service:8080/admin/fail-mode/{mode}")
+                resp.raise_for_status()
+            except Exception as exc:
+                error_counter.add(1, {"service": SERVICE_NAME, "reason": "tool_admin_dependency"})
+                log_event("error", "gateway_tool_fail_mode_update_failed", mode=mode, error=str(exc))
+                raise HTTPException(status_code=503, detail="Failed to update tool fail mode") from exc
+
+        log_event("info", "gateway_tool_fail_mode_updated", mode=mode)
+        return {"tool_fail_mode": mode}
+
+
 @app.post("/generate")
 async def generate(question: str) -> Dict[str, object]:
     if SERVICE_NAME != "llm-service":

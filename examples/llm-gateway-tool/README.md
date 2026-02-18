@@ -20,6 +20,7 @@ docker compose -f examples/llm-gateway-tool/docker-compose.yml up --build -d
 ## Endpoints
 
 - Gateway API: http://localhost:18080
+- Admin (via gateway) to toggle tool fail mode from host: `POST /admin/tool-fail-mode/{none|timeout|error}`
 - Grafana: http://localhost:13000 (admin/admin)
 - Jaeger UI: http://localhost:16687
 - Prometheus: http://localhost:19090
@@ -38,8 +39,7 @@ done
 1) Turn on failure mode in the tool:
 
 ```bash
-docker compose -f examples/llm-gateway-tool/docker-compose.yml exec tool-service \
-  curl -s -X POST http://localhost:8080/admin/fail-mode/error
+curl -s -X POST http://localhost:18080/admin/tool-fail-mode/error | jq
 ```
 
 2) Generate failing requests:
@@ -79,8 +79,7 @@ Expect HTTP `503` from gateway when downstream fails.
 ## Switch back to healthy mode
 
 ```bash
-docker compose -f examples/llm-gateway-tool/docker-compose.yml exec tool-service \
-  curl -s -X POST http://localhost:8080/admin/fail-mode/none
+curl -s -X POST http://localhost:18080/admin/tool-fail-mode/none | jq
 ```
 
 ## Stop and clean
