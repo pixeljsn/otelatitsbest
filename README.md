@@ -7,7 +7,9 @@ This repo gives you a **stronger observability baseline** than a minimal compose
 - RED metrics derived from traces via the `spanmetrics` connector,
 - Prometheus for long-lived metrics storage/scraping,
 - Jaeger for tracing UX,
-- Grafana pre-provisioned with Prometheus + Jaeger datasources.
+- Loki for log storage/querying,
+- Grafana pre-provisioned with Prometheus + Jaeger + Loki datasources,
+- always-on `telemetrygen` services so you can immediately see traces/metrics/logs flowing.
 
 ## Why this is better than a basic demo stack
 
@@ -16,7 +18,8 @@ Many quick tutorials wire components together but skip operational essentials. T
 1. **Collector safety defaults**: memory limiting + batching.
 2. **Multi-signal ingest**: traces, metrics, and logs all accepted via OTLP.
 3. **Trace-to-metrics pipeline**: span-to-RED metrics using `spanmetrics`.
-4. **Ready dashboards**: Grafana auto-connects to Prometheus and Jaeger.
+4. **Ready dashboards and log exploration**: Grafana auto-connects to Prometheus, Jaeger, and Loki.
+5. **Immediate signal flow**: telemetry generators continuously emit all three signal types.
 
 ## Quick start
 
@@ -29,6 +32,13 @@ Open UIs:
 - Grafana: http://localhost:3000 (admin/admin)
 - Prometheus: http://localhost:9090
 - Jaeger: http://localhost:16686
+- Loki API health: http://localhost:3100/ready
+
+## Verify telemetry is flowing
+
+- **Traces**: open Jaeger and search for service `telemetrygen`.
+- **Metrics**: in Prometheus run `traces_spanmetrics_calls_total` or `target_info`.
+- **Logs**: in Grafana Explore, pick the `Loki` datasource and run query `{service_name="telemetrygen"}`.
 
 ## Send telemetry from an app
 

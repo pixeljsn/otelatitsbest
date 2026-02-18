@@ -59,6 +59,9 @@ exporters:
     endpoint: 0.0.0.0:8889
     enable_open_metrics: true
 
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
   debug:
     verbosity: basic
 
@@ -79,4 +82,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [debug]
+      exporters: [loki, debug]

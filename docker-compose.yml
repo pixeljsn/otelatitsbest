@@ -17,6 +17,7 @@ services:
     depends_on:
       - jaeger
       - prometheus
+      - loki
     restart: unless-stopped
 
   jaeger:
@@ -26,6 +27,15 @@ services:
     ports:
       - "16686:16686" # Jaeger UI
       - "4319:4317"   # Optional: host OTLP->Jaeger directly
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.4.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
     restart: unless-stopped
 
   prometheus:
@@ -56,8 +66,52 @@ services:
     depends_on:
       - prometheus
       - jaeger
+      - loki
+    restart: unless-stopped
+
+  telemetrygen-traces:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    command:
+      - "traces"
+      - "--otlp-endpoint=otel-collector:4317"
+      - "--otlp-insecure"
+      - "--service=telemetrygen"
+      - "--rate=5"
+      - "--duration=0"
+      - "--workers=2"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  telemetrygen-metrics:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    command:
+      - "metrics"
+      - "--otlp-endpoint=otel-collector:4317"
+      - "--otlp-insecure"
+      - "--service=telemetrygen"
+      - "--rate=5"
+      - "--duration=0"
+      - "--workers=2"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  telemetrygen-logs:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    command:
+      - "logs"
+      - "--otlp-endpoint=otel-collector:4317"
+      - "--otlp-insecure"
+      - "--service=telemetrygen"
+      - "--rate=5"
+      - "--duration=0"
+      - "--workers=2"
+    depends_on:
+      - otel-collector
     restart: unless-stopped
 
 volumes:
   prometheus-data:
   grafana-data:
+  loki-data:
