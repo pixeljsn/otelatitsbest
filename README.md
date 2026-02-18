@@ -27,6 +27,9 @@ Many quick tutorials wire components together but skip operational essentials. T
 docker compose up -d
 ```
 
+If your environment blocks GitHub Container Registry (`ghcr.io`), this stack already uses the Docker Hub
+`otel/telemetrygen` image for synthetic traces/metrics/logs to avoid registry auth errors.
+
 Open UIs:
 
 - Grafana: http://localhost:3000 (admin/admin)

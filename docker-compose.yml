@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
 
   telemetrygen-traces:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    image: otel/telemetrygen:0.119.0
     command:
       - "traces"
       - "--otlp-endpoint=otel-collector:4317"
@@ -84,7 +84,7 @@ services:
     restart: unless-stopped
 
   telemetrygen-metrics:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    image: otel/telemetrygen:0.119.0
     command:
       - "metrics"
       - "--otlp-endpoint=otel-collector:4317"
@@ -98,7 +98,7 @@ services:
     restart: unless-stopped
 
   telemetrygen-logs:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/telemetrygen:0.119.0
+    image: otel/telemetrygen:0.119.0
     command:
       - "logs"
       - "--otlp-endpoint=otel-collector:4317"
