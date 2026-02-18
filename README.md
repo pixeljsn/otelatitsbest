@@ -52,3 +52,7 @@ docker compose restart telemetrygen-traces telemetrygen-metrics telemetrygen-log
 ```bash
 curl -sf http://localhost:13133/ && curl -sf http://localhost:8889/metrics | head
 ```
+
+## Additional scenario demo
+
+- `examples/llm-gateway-tool/`: separate compose stack with a modern `gateway-api -> llm-service -> tool-service` outage simulation to practice traces/logs/metrics correlation.

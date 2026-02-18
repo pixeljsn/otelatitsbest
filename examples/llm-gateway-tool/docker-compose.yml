@@ -1,0 +1,89 @@
+version: "3.9"
+
+name: otel-llm-correlation-demo
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.119.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otelcol/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "14317:4317"
+      - "14318:4318"
+      - "18889:8889"
+      - "113133:13133"
+    depends_on:
+      - jaeger
+      - loki
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.65.0
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16687:16686"
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "19090:9090"
+
+  loki:
+    image: grafana/loki:3.4.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "13100:3100"
+
+  grafana:
+    image: grafana/grafana-oss:11.5.1
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "13000:3000"
+    depends_on:
+      - jaeger
+      - loki
+      - prometheus
+
+  gateway-api:
+    build: ./services
+    environment:
+      - SERVICE_NAME=gateway-api
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - UPSTREAM_TIMEOUT_SECONDS=2
+    ports:
+      - "18080:8080"
+    depends_on:
+      - llm-service
+      - otel-collector
+
+  llm-service:
+    build: ./services
+    environment:
+      - SERVICE_NAME=llm-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - UPSTREAM_TIMEOUT_SECONDS=2
+    depends_on:
+      - tool-service
+      - otel-collector
+
+  tool-service:
+    build: ./services
+    environment:
+      - SERVICE_NAME=tool-service
+      - TOOL_FAIL_MODE=none
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - UPSTREAM_TIMEOUT_SECONDS=2
+    depends_on:
+      - otel-collector
