@@ -25,11 +25,17 @@ SERVICE_NAME = os.getenv("SERVICE_NAME", "gateway-api")
 OTEL_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
 TOOL_FAIL_MODE = os.getenv("TOOL_FAIL_MODE", "none")
 TIMEOUT_SECONDS = float(os.getenv("UPSTREAM_TIMEOUT_SECONDS", "2.0"))
+TRACE_EXPORT_INTERVAL_MS = int(os.getenv("TRACE_EXPORT_INTERVAL_MS", "1000"))
 
 resource = Resource.create({"service.name": SERVICE_NAME, "deployment.environment": "demo"})
 
 trace_provider = TracerProvider(resource=resource)
-trace_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{OTEL_ENDPOINT}/v1/traces")))
+trace_provider.add_span_processor(
+    BatchSpanProcessor(
+        OTLPSpanExporter(endpoint=f"{OTEL_ENDPOINT}/v1/traces"),
+        schedule_delay_millis=TRACE_EXPORT_INTERVAL_MS,
+    )
+)
 trace.set_tracer_provider(trace_provider)
 
 metric_reader = PeriodicExportingMetricReader(
@@ -74,6 +80,14 @@ def log_event(level: str, event: str, **fields: object) -> None:
     else:
         logger.info(json.dumps(payload))
 
+
+
+log_event(
+    "info",
+    "otel_configured",
+    otlp_endpoint=OTEL_ENDPOINT,
+    trace_export_interval_ms=TRACE_EXPORT_INTERVAL_MS,
+)
 
 @app.get("/health")
 def health() -> Dict[str, str]:

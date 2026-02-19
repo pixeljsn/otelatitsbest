@@ -87,3 +87,19 @@ curl -s -X POST http://localhost:18080/admin/tool-fail-mode/none | jq
 ```bash
 docker compose -f examples/llm-gateway-tool/docker-compose.yml down -v
 ```
+
+
+## Quick trace troubleshooting
+
+If traces still do not show up, run:
+
+```bash
+docker compose -f examples/llm-gateway-tool/docker-compose.yml logs --tail=200 otel-collector gateway-api llm-service tool-service
+```
+
+Then check:
+- Jaeger UI on `http://localhost:16687`
+- service filter: `gateway-api`
+- time range: Last 1 hour
+
+The services are configured with `OTEL_TRACES_SAMPLER=always_on` to avoid sampling-related missing traces in this demo.
